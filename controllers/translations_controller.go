@@ -5,8 +5,11 @@ import (
 	"net/http"
 	"os"
 
+	"flexyword.io/backend/models"
+	"flexyword.io/backend/services"
 	"github.com/gin-gonic/gin"
 	"github.com/sashabaranov/go-openai"
+	"gorm.io/gorm"
 )
 
 // Request model
@@ -22,7 +25,7 @@ type RatesLimitError struct {
 }
 
 // TranslatePhrase handles the translation of a phrase into multiple languages
-func TranslatePhrase(c *gin.Context) {
+func TranslatePhrase(c *gin.Context, db *gorm.DB) {
 	var request TranslateRequest
 	if err := c.ShouldBindJSON(&request); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -52,15 +55,36 @@ func TranslatePhrase(c *gin.Context) {
 
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, err)
+			return
+		} else {
+			if len(resp.Choices) > 0 {
+				translations[lang] = resp.Choices[0].Message.Content
+			} else {
+				translations[lang] = ""
+			}
 		}
 
-		if len(resp.Choices) > 0 {
-			translations[lang] = resp.Choices[0].Message.Content
-		} else {
-			translations[lang] = "No translation found."
-		}
+		
 	}
 
+
+	// Migrate the schema
+	db.AutoMigrate(&models.Translation{})
+
+	translation := models.Translation {
+		Phrase: request.Phrase,
+		Translations: translations,
+		Language: request.InputLanguage,
+	}
+
+	// Store the translation using the translation service
+	err := services.StoreTranslation(db, &translation)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, err.Error())
+		return
+	}
+  
 	// Send the response as JSON
 	c.JSON(http.StatusOK, gin.H{
 		"phrase":       request.Phrase,

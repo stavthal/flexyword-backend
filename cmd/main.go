@@ -2,9 +2,13 @@ package main
 
 import (
 	"flexyword.io/backend/controllers"
+	"flexyword.io/backend/db"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )
+
+
+var Db = db.NewConnection()
 
 
 func main() {
@@ -29,10 +33,12 @@ func main() {
 	})
 
 	// Create a route group for translation-related routes
-	translationGroup := r.Group("/api/translate")
-	{
-		translationGroup.POST("/", controllers.TranslatePhrase)
-	}
+    translationGroup := r.Group("/api/translate")
+    {
+        translationGroup.POST("/", func(c *gin.Context) {
+            controllers.TranslatePhrase(c, Db)
+        })
+    }
 
 
 	r.Run(":8080") // listen and serve on 
