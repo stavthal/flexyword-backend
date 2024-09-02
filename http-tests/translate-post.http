@@ -1,0 +1,8 @@
+POST http://localhost:8080/api/translate/
+Content-Type: application/json
+
+{
+    "phrase": "Hello, World!",
+    "input_language": "English",
+    "languages": ["Greek", "French", "Spanish"]
+}
