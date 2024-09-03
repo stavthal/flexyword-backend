@@ -9,13 +9,35 @@ import (
 	"flexyword.io/backend/models"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
+	"gorm.io/gorm"
 )
 
 
-var Db = db.NewConnection()
+var Db *gorm.DB
+
+func init() {
+	// Load the environmental variables
+	err := godotenv.Load(".env")
+	if err != nil {
+		log.Fatalf("Error loading .env file: %v", err)
+	}
+
+	// Initialize the database connection
+	var dbErr error
+	Db, dbErr = db.NewConnection()
+	if dbErr != nil {
+		log.Fatalf("Failed to connect to the database: %v", dbErr)
+	}
+}
+
 
 
 func main() {
+
+// Check if the database connection is initialized
+	if Db == nil {
+		log.Fatalf("Failed to connect to the database")
+	}
 
 	// Load the environmental variables
 	err := godotenv.Load(".env")

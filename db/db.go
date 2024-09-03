@@ -1,17 +1,28 @@
 package db
 
 import (
-	"gorm.io/driver/sqlite"
+	"fmt"
+	"os"
+
+	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
-// Make a new connection to an SQLite database
-// TODO: Add support for other databases (PostgreSQL)
-func NewConnection() (*gorm.DB) {
-	db, err := gorm.Open(sqlite.Open("./dev.db"), &gorm.Config{})
-	if err != nil {
-		panic("failed to connect database")
+// NewConnection creates a new connection to the PostgreSQL database via Supabase
+func NewConnection() (*gorm.DB, error) {
+	// Get the Supabase connection URL from the environment variables
+	dsn := os.Getenv("SUPABASE_DB_URL")
+	if dsn == "" {
+		return nil, fmt.Errorf("SUPABASE_DB_URL environment variable not set")
 	}
 
-	return db
+	fmt.Println("Connecting to database with DSN:", dsn) // Debugging print
+
+	// Open the connection to the PostgreSQL database
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect database: %w", err)
+	}
+
+	return db, nil
 }
