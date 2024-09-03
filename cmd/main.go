@@ -52,6 +52,9 @@ func main() {
 		usersGroup.POST("/register", func(c *gin.Context) {
 			controllers.RegisterUser(c, Db)
 		})
+		usersGroup.POST("/login", func(c *gin.Context) {
+			controllers.LoginUser(c, Db)
+		})
 	}
 
 
