@@ -39,7 +39,7 @@ func (p *PricingPlan) SeedPricingPlans(db *gorm.DB) error {
 	plans := []PricingPlan{
 		{
 			Name:              "Freemium",
-			TranslationLimit:  5,
+			TranslationLimit:  10,
 			LanguagesLimit:    2,
 			PhraseLengthLimit: 100,
 			TokenLimit:        1000,

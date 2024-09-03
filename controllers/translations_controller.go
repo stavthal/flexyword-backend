@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"net/http"
 	"os"
+	"strings"
+	"time"
 
 	"flexyword.io/backend/models"
 	"flexyword.io/backend/services"
@@ -12,6 +14,12 @@ import (
 	"github.com/sashabaranov/go-openai"
 	"gorm.io/gorm"
 )
+
+// EstimateTokens estimates the number of tokens used based on the length of the text.
+// This is a rough approximation.
+func EstimateTokens(text string) int {
+	return len(text) / 4 // Roughly 4 characters per token
+}
 
 // Request model
 type TranslateRequest struct {
@@ -43,10 +51,48 @@ func TranslatePhrase(c *gin.Context, db *gorm.DB) {
 	}
 	userIdUint := uint(userId)
 
+	// Fetch user from the database
+	var user models.User
+	if err := db.Preload("PricingPlan").First(&user, userIdUint).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "User not found"})
+		return
+	}
+
+	// Enforce pricing plan constraints (Freemium example)
+	plan := user.PricingPlan
+
+	// Maximum number of languages
+	if len(request.Languages) > plan.LanguagesLimit {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Exceeded the maximum number of languages allowed for your plan"})
+		return
+	}
+
+	// Maximum phrase length
+	if len(request.Phrase) > plan.PhraseLengthLimit {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Exceeded the maximum phrase length allowed for your plan"})
+		return
+	}
+
+	// Check if the user has exceeded the monthly translation limit
+	currentMonth := time.Now().Format("2006-01")
+	var translationsCount int64
+	if err := db.Model(&models.Translation{}).
+		Where("user_id = ? AND to_char(created_at, 'YYYY-MM') = ?", userIdUint, currentMonth).
+		Count(&translationsCount).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to count translations"})
+		return
+	}
+
+	if translationsCount >= int64(plan.TranslationLimit) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "You have reached the maximum number of translations for this month"})
+		return
+	}
+
 	// Initialize OpenAI client
 	client := openai.NewClient(os.Getenv("OPENAI_API_KEY"))
 
 	translations := make(map[string]string)
+	totalTokensUsed := 0
 
 	// Loop through each language and request translation from OpenAI
 	for _, lang := range request.Languages {
@@ -70,10 +116,25 @@ func TranslatePhrase(c *gin.Context, db *gorm.DB) {
 		}
 
 		if len(resp.Choices) > 0 {
-			translations[lang] = resp.Choices[0].Message.Content
+			translation := strings.TrimSpace(resp.Choices[0].Message.Content)
+			translations[lang] = translation
+			totalTokensUsed += EstimateTokens(translation)
 		} else {
 			translations[lang] = ""
 		}
+	}
+
+	// Check if the total tokens used exceed the plan's token limit
+	if user.UsedTokens+totalTokensUsed > plan.TokenLimit {
+		c.JSON(http.StatusForbidden, gin.H{"error": "You have reached the token limit for this month"})
+		return
+	}
+
+	// Update the user's token usage
+	user.UsedTokens += totalTokensUsed
+	if err := db.Save(&user).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update user token usage"})
+		return
 	}
 
 	// Convert translations map to JSON string
