@@ -5,6 +5,7 @@ import (
 
 	"flexyword.io/backend/controllers"
 	"flexyword.io/backend/db"
+	"flexyword.io/backend/middlewares"
 	"flexyword.io/backend/models"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -47,6 +48,7 @@ func main() {
 
 	// Create a route group for translation-related routes
     translationGroup := r.Group("/api/translate")
+	translationGroup.Use(middlewares.AuthMiddleware())
     {
         translationGroup.POST("/", func(c *gin.Context) {
             controllers.TranslatePhrase(c, Db)
