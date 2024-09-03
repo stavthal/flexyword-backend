@@ -53,7 +53,7 @@ func TranslatePhrase(c *gin.Context, db *gorm.DB) {
 		prompt := "Translate the following phrase from " + request.InputLanguage + " into " + lang + ": " + request.Phrase
 
 		resp, err := client.CreateChatCompletion(context.Background(), openai.ChatCompletionRequest{
-			Model: "gpt-3.5-turbo",
+			Model: "gpt-4-turbo",
 			Messages: []openai.ChatCompletionMessage{
 				{
 					Role:    "user",
