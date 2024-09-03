@@ -1,14 +1,12 @@
 package models
 
-import (
-	"gorm.io/gorm"
-)
+import "gorm.io/gorm"
 
 type Translation struct {
 	gorm.Model
-	Language    	string 				`json:"language" gorm:"size:50;not null"`  // Source language
-	Phrase	     	string 				`json:"phrase" gorm:"size:100;not null"`  // Phrase with max 100 characters
-	Translations 	map[string]string 	`json:"translations" gorm:"type:json;serializer:json" `  // Map of translations
-	UserID      	uint   				`json:"user_id" gorm:"index;not null"` // Foreign key to the User model
-
+	Phrase           string `json:"phrase" gorm:"not null"`
+	InputLanguage    string `json:"input_language" gorm:"not null"`
+	OutputLanguages  string `json:"output_languages" gorm:"type:text;not null"` // JSON encoded array of languages
+	TranslationResult string `json:"translation_result" gorm:"type:text;not null"` // JSON encoded translation results
+	UserID           uint   `json:"user_id" gorm:"not null"` // Foreign key to the User model
 }
