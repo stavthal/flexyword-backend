@@ -68,9 +68,6 @@ func TranslatePhrase(c *gin.Context, db *gorm.DB) {
 	}
 
 
-	// Migrate the schema
-	db.AutoMigrate(&models.Translation{})
-
 	translation := models.Translation {
 		Phrase: request.Phrase,
 		Translations: translations,
