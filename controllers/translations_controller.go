@@ -42,14 +42,14 @@ func TranslatePhrase(c *gin.Context, db *gorm.DB) {
 		prompt := "Translate the following phrase from " + request.InputLanguage + " into " + lang + ": " + request.Phrase
 
 		resp, err := client.CreateChatCompletion(context.Background(), openai.ChatCompletionRequest{
-			Model: "gpt-3.5-turbo",
+			Model: "gpt-4o-mini",
 			Messages: []openai.ChatCompletionMessage{
 				{
 					Role:    "user",
 					Content: prompt,
 				},
 			},
-			MaxTokens:   60,
+			MaxTokens:   4096, // TODO: Change later to a lower percentage, based on user level
 			Temperature: 0.2,
 		})
 
@@ -88,12 +88,4 @@ func TranslatePhrase(c *gin.Context, db *gorm.DB) {
 		"translations": translations,
 	})
 }
-
-
-// TODO: Add a handler for listing all translations of a user
-// TODO: Add a handler that translates a single phrase and outputs the results into i18n friendly files
-// TODO: Add a route handler for premium users to use the application with softer limits
-// TODO: Add a middleware to use only for authenticated users
-// TODO: Add a way to limit how many requests a user can send each day
-// TODO: Add a way to save the new translations to a database, bound to the user's id
 

@@ -24,10 +24,16 @@ func main() {
 	}
 
 	// AutoMigrate the schema
-    err = Db.AutoMigrate(&models.User{}, &models.Translation{})
+    err = Db.AutoMigrate(&models.User{}, &models.Translation{}, &models.PricingPlan{})
     if err != nil {
         log.Fatalf("Error migrating database schema: %v", err)
     }
+
+	// Create an instance of PricingPlan to call the seed method
+	plan := models.PricingPlan{}
+	if err := plan.SeedPricingPlans(Db); err != nil {
+		log.Fatalf("Failed to seed pricing plans: %v", err)
+	}
 
 
 	// Create the Gin router
@@ -56,8 +62,6 @@ func main() {
 			controllers.LoginUser(c, Db)
 		})
 	}
-
-
 
 	
 	r.Run(":8080") // listen and serve on 

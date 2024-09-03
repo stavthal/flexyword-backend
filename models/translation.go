@@ -9,5 +9,6 @@ type Translation struct {
 	Language    	string 				`json:"language" gorm:"size:50;not null"`  // Source language
 	Phrase	     	string 				`json:"phrase" gorm:"size:100;not null"`  // Phrase with max 100 characters
 	Translations 	map[string]string 	`json:"translations" gorm:"type:json;serializer:json" `  // Map of translations
+	UserID      	uint   				`json:"user_id" gorm:"index;not null"` // Foreign key to the User model
 
 }
