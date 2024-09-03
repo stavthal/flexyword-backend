@@ -60,7 +60,7 @@ func TranslatePhrase(c *gin.Context, db *gorm.DB) {
 					Content: prompt,
 				},
 			},
-			MaxTokens:   60, // Adjust max tokens based on expected translation length
+			MaxTokens:   4096, // Adjust max tokens based on expected translation length
 			Temperature: 0.2, // Low temperature for deterministic results
 		})
 
