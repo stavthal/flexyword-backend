@@ -28,6 +28,21 @@ func TranslatePhrase(c *gin.Context, db *gorm.DB) {
 		return
 	}
 
+	// Retrieve the user ID from the context set by the middleware
+	userIdInterface, exists := c.Get("userId")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	// Convert userId from float64 to uint
+	userId, ok := userIdInterface.(float64)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse user ID"})
+		return
+	}
+	userIdUint := uint(userId)
+
 	// Initialize OpenAI client
 	client := openai.NewClient(os.Getenv("OPENAI_API_KEY"))
 
@@ -38,14 +53,14 @@ func TranslatePhrase(c *gin.Context, db *gorm.DB) {
 		prompt := "Translate the following phrase from " + request.InputLanguage + " into " + lang + ": " + request.Phrase
 
 		resp, err := client.CreateChatCompletion(context.Background(), openai.ChatCompletionRequest{
-			Model: "gpt-3.5-turbo", // Use a stable, available model. Adjust if needed.
+			Model: "gpt-3.5-turbo",
 			Messages: []openai.ChatCompletionMessage{
 				{
 					Role:    "user",
 					Content: prompt,
 				},
 			},
-			MaxTokens:   4096, // Adjust max tokens based on expected translation length
+			MaxTokens:   60, // Adjust max tokens based on expected translation length
 			Temperature: 0.2, // Low temperature for deterministic results
 		})
 
@@ -81,7 +96,7 @@ func TranslatePhrase(c *gin.Context, db *gorm.DB) {
 		InputLanguage:     request.InputLanguage,
 		OutputLanguages:   string(outputLanguagesJSON), // Store the languages array as JSON string
 		TranslationResult: string(translationsJSON),    // Store the translations as JSON string
-		UserID:            c.GetUint("userId"),         // Assume userId is stored in context by AuthMiddleware
+		UserID:            userIdUint,                  // Use the correctly converted userId
 	}
 
 	if err := services.StoreTranslation(db, &translation); err != nil {
