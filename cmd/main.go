@@ -2,11 +2,13 @@ package main
 
 import (
 	"log"
+	"time"
 
 	"flexyword.io/backend/controllers"
 	"flexyword.io/backend/db"
 	"flexyword.io/backend/middlewares"
 	"flexyword.io/backend/models"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"gorm.io/gorm"
@@ -34,20 +36,8 @@ func init() {
 
 func main() {
 
-// Check if the database connection is initialized
-	if Db == nil {
-		log.Fatalf("Failed to connect to the database")
-	}
-
-	// Load the environmental variables
-	err := godotenv.Load(".env")
-
-	if err != nil {
-		panic("Error loading .env file")
-	}
-
 	// AutoMigrate the schema
-    err = Db.AutoMigrate(&models.User{}, &models.Translation{}, &models.PricingPlan{})
+    err := Db.AutoMigrate(&models.User{}, &models.Translation{}, &models.PricingPlan{})
     if err != nil {
         log.Fatalf("Error migrating database schema: %v", err)
     }
@@ -61,6 +51,16 @@ func main() {
 
 	// Create the Gin router
 	r := gin.Default()
+
+	// Setup CORS middleware
+    r.Use(cors.New(cors.Config{
+        AllowOrigins:     []string{"http://localhost:3000", "https://your-nuxt-frontend.com"},
+        AllowMethods:     []string{"GET","POST", "PUT", "DELETE"},
+        AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
+        ExposeHeaders:    []string{"Content-Length"},
+        AllowCredentials: true,
+        MaxAge:           12 * time.Hour,
+    }))
 
 	r.GET("/", func(c *gin.Context) {
 		c.JSON(200, gin.H{
