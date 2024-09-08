@@ -64,7 +64,7 @@ func TranslatePhrase(c *gin.Context, db *gorm.DB) {
 		return
 	}
 
-	// Enforce pricing plan constraints (Freemium example)
+	// Enforce pricing plan constraints
 	plan := user.PricingPlan
 
 	// Maximum number of languages
@@ -102,18 +102,18 @@ func TranslatePhrase(c *gin.Context, db *gorm.DB) {
 
 	// Loop through each language and request translation from OpenAI
 	for _, lang := range request.Languages {
-		prompt := "Translate the following phrase from " + request.InputLanguage + " into " + lang + ": " + request.Phrase + ".Return only the returned phrase, no extra text."
+		prompt := "Translate the following phrase from " + request.InputLanguage + " into " + lang + ": " + request.Phrase + ". Return only the translated phrase."
 
 		resp, err := client.CreateChatCompletion(context.Background(), openai.ChatCompletionRequest{
-			Model: "gpt-4o-mini",
+			Model: "gpt-4-turbo",
 			Messages: []openai.ChatCompletionMessage{
 				{
 					Role:    "user",
 					Content: prompt,
 				},
 			},
-			MaxTokens:   4096, // Adjust max tokens based on expected translation length, TODO: Implement dynamic token limit based on pricing plan
-			Temperature: 0.2, // Low temperature for deterministic results
+			MaxTokens:   500,  // Adjust max tokens based on expected translation length
+			Temperature: 0.2,  // Low temperature for deterministic results
 		})
 
 		if err != nil {
@@ -161,9 +161,9 @@ func TranslatePhrase(c *gin.Context, db *gorm.DB) {
 	translation := models.Translation{
 		Phrase:            request.Phrase,
 		InputLanguage:     request.InputLanguage,
-		OutputLanguages:   string(outputLanguagesJSON), // Store the languages array as JSON string
-		TranslationResult: string(translationsJSON),    // Store the translations as JSON string
-		UserID:            user.ID,                  // Use the correctly converted userId
+		OutputLanguages:   string(outputLanguagesJSON),
+		TranslationResult: string(translationsJSON),
+		UserID:            user.ID,
 	}
 
 	if err := services.StoreTranslation(db, &translation); err != nil {
@@ -177,6 +177,7 @@ func TranslatePhrase(c *gin.Context, db *gorm.DB) {
 		"translations": translations,
 	})
 }
+
 
 // GetTranslations retrieves the translation history for the authenticated user
 func GetTranslations(c *gin.Context, db *gorm.DB) {
