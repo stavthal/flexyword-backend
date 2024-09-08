@@ -8,7 +8,6 @@ import (
 	"flexyword.io/backend/controllers"
 	"flexyword.io/backend/db"
 	"flexyword.io/backend/middlewares"
-	"flexyword.io/backend/models"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 
@@ -38,20 +37,6 @@ func init() {
 
 
 func main() {
-
-	// AutoMigrate the schema
-    err := Db.AutoMigrate(&models.User{}, &models.Translation{}, &models.PricingPlan{})
-    if err != nil {
-        log.Fatalf("Error migrating database schema: %v", err)
-    }
-
-	// Create an instance of PricingPlan to call the seed method
-	plan := models.PricingPlan{}
-	if err := plan.SeedPricingPlans(Db); err != nil {
-		log.Fatalf("Failed to seed pricing plans: %v", err)
-	}
-
-
 	// Create the Gin router
 	r := gin.Default()
 

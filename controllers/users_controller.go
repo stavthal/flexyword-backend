@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"fmt"
 	"net/http"
 
 	"flexyword.io/backend/models"
@@ -14,7 +15,16 @@ func RegisterUser(c *gin.Context, db *gorm.DB) {
 	var user models.User
 
 	// Bind the JSON body to the user model
-	c.BindJSON(&user)
+	err := c.BindJSON(&user)
+
+	fmt.Println(user)	
+
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Invalid request",
+		})
+		return
+	}
 
 	// Check if user with that email already exists and handle it
 	var existingUser models.User
@@ -38,7 +48,14 @@ func RegisterUser(c *gin.Context, db *gorm.DB) {
 	}
 
 	// Create the user
-	services.CreateUser(db, &user)
+	err = services.CreateUser(db, &user)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
 
 	// TODO: Generate a JWT token and return it in the response to sign the user in automatically
 	c.JSON(http.StatusOK, gin.H{
@@ -71,8 +88,11 @@ func LoginUser(c *gin.Context, db *gorm.DB) {
 		return
 	}
 
+	// Convert the user's ID to a string from uuid
+	parsedUserId := existingUser.ID.String()
+
 	// Generate a JWT token and return it in the response
-	token, err := utils.GenerateJWT(existingUser.ID)
+	token, err := utils.GenerateJWT(parsedUserId)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{

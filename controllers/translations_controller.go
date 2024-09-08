@@ -11,6 +11,7 @@ import (
 	"flexyword.io/backend/models"
 	"flexyword.io/backend/services"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/sashabaranov/go-openai"
 	"gorm.io/gorm"
 )
@@ -43,17 +44,21 @@ func TranslatePhrase(c *gin.Context, db *gorm.DB) {
 		return
 	}
 
-	// Convert userId from float64 to uint
-	userId, ok := userIdInterface.(float64)
+	// Convert userId from string to uuid.UUID
+	userIdStr, ok := userIdInterface.(string)
 	if !ok {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse user ID"})
 		return
 	}
-	userIdUint := uint(userId)
+	userId, err := uuid.Parse(userIdStr)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID"})
+		return
+	}
 
 	// Fetch user from the database
 	var user models.User
-	if err := db.Preload("PricingPlan").First(&user, userIdUint).Error; err != nil {
+	if err := db.Preload("PricingPlan").First(&user, "id = ?", userId).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "User not found"})
 		return
 	}
@@ -77,7 +82,7 @@ func TranslatePhrase(c *gin.Context, db *gorm.DB) {
 	currentMonth := time.Now().Format("2006-01")
 	var translationsCount int64
 	if err := db.Model(&models.Translation{}).
-		Where("user_id = ? AND to_char(created_at, 'YYYY-MM') = ?", userIdUint, currentMonth).
+		Where("user_id = ? AND to_char(created_at, 'YYYY-MM') = ?", user.ID, currentMonth).
 		Count(&translationsCount).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to count translations"})
 		return
@@ -157,7 +162,7 @@ func TranslatePhrase(c *gin.Context, db *gorm.DB) {
 		InputLanguage:     request.InputLanguage,
 		OutputLanguages:   string(outputLanguagesJSON), // Store the languages array as JSON string
 		TranslationResult: string(translationsJSON),    // Store the translations as JSON string
-		UserID:            userIdUint,                  // Use the correctly converted userId
+		UserID:            user.ID,                  // Use the correctly converted userId
 	}
 
 	if err := services.StoreTranslation(db, &translation); err != nil {
@@ -182,19 +187,25 @@ func GetTranslations(c *gin.Context, db *gorm.DB) {
 		return
 	}
 
-	// Convert userId from float64 to uint
-	userId, ok := userIdInterface.(float64)
+	// Convert userId from string to uuid.UUID
+	userIdStr, ok := userIdInterface.(string)
 	if !ok {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse user ID"})
 		return
 	}
-
-	userIdUint := uint(userId)
+	userId, err := uuid.Parse(userIdStr)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID"})
+		return
+	}
 
 	// Fetch translations from the database
-	var translations []models.Translation
+	var translations []models.TranslationResponse
 
-	if err := db.Where("user_id = ?", userIdUint).Find(&translations).Error; err != nil {
+	if err := db.Model(&models.Translation{}).
+		Select("id, phrase, input_language, output_languages, translation_result, created_at").
+		Where("user_id = ?", userId).
+		Scan(&translations).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch translations"})
 		return
 	}

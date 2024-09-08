@@ -30,7 +30,20 @@ docker-rm:
 	docker rm $(CONTAINER_NAME)
 
 docker-image-prune:
-	docker image prune
+	docker image prune 
 
 docker-image-prune-sudo:
 	docker image prune -a
+
+# Goose Related
+migrate-up:
+	@source .env && goose -dir ./db/migrations postgres $$DATABASE_URL up
+
+migrate-down:
+	@source .env && goose -dir ./db/migrations postgres $$DATABASE_URL down
+
+migrate-status:
+	@source .env && goose -dir ./db/migrations postgres $$DATABASE_URL status
+
+migrate-create:
+	@source .env && goose -dir ./db/migrations create $(name) sql

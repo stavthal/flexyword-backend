@@ -8,7 +8,7 @@ import (
 )
 
 // Generate a JWT Token
-func GenerateJWT(userId uint) (string, error) {
+func GenerateJWT(userId string) (string, error) {
 	JWT_SECRET := []byte(os.Getenv("JWT_SECRET"))
 
 	// Define an expiration time for the token
