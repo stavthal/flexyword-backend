@@ -1,0 +1,135 @@
+swagger: "2.0"
+info:
+  description: "This is a sample server for a translation API."
+  version: "1.0.0"
+  title: "Translation API"
+  contact:
+    email: "support@flexyword.io"
+host: "localhost:8080"
+basePath: "/api"
+schemes:
+  - "http"
+paths:
+  /translate:
+    post:
+      tags:
+        - "translation"
+      summary: "Translate a phrase"
+      description: "Translate a given phrase to multiple languages."
+      operationId: "translatePhrase"
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      parameters:
+        - in: "body"
+          name: "body"
+          description: "Phrase to be translated"
+          required: true
+          schema:
+            type: "object"
+            required:
+              - "phrase"
+              - "languages"
+            properties:
+              phrase:
+                type: "string"
+                example: "Hello, World!"
+              languages:
+                type: "array"
+                items:
+                  type: "string"
+                example: ["es", "fr", "de"]
+      responses:
+        200:
+          description: "Successful translation"
+          schema:
+            type: "object"
+            properties:
+              phrase:
+                type: "string"
+                example: "Hello, World!"
+              translations:
+                type: "object"
+                additionalProperties:
+                  type: "string"
+                example:
+                  es: "Hola, Mundo!"
+                  fr: "Bonjour, le monde!"
+                  de: "Hallo, Welt!"
+        400:
+          description: "Invalid input"
+        500:
+          description: "Internal server error"
+  /users/register:
+    post:
+      tags:
+        - "user"
+      summary: "Create a new user"
+      description: "Create a new user with a hashed password."
+      operationId: "createUser"
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      parameters:
+        - in: "body"
+          name: "body"
+          description: "User object that needs to be added"
+          required: true
+          schema:
+            type: "object"
+            required:
+              - "email"
+              - "username"
+              - "password"
+              - "first_name"
+              - "last_name"
+            properties:
+              username:
+                type: "string"
+                example: "johndoe"
+              password:
+                type: "string"
+                example: "password123"
+      responses:
+        201:
+          description: "User created"
+        400:
+          description: "Invalid input"
+        500:
+          description: "Internal server error"
+definitions:
+  User:
+    type: "object"
+    required:
+      - "username"
+      - "password"
+    properties:
+      username:
+        type: "string"
+      password:
+        type: "string"
+  Translation:
+    type: "object"
+    required:
+      - "Phrase"
+      - "InputLanguage"
+      - "OutputLanguages"
+      - "TranslationResult"
+      - "UserID"
+    properties:
+      Phrase:
+        type: "string"
+      InputLanguage:
+        type: "string"
+      OutputLanguages:
+        type: "array"
+        items:
+          type: "string"
+      TranslationResult:
+        type: "object"
+        additionalProperties:
+          type: "string"
+      UserID:
+        type: "string"
