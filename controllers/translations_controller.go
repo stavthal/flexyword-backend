@@ -106,7 +106,7 @@ func TranslatePhrase(c *gin.Context, db *gorm.DB) {
 					Content: prompt,
 				},
 			},
-			MaxTokens:   4096, // Adjust max tokens based on expected translation length
+			MaxTokens:   4096, // Adjust max tokens based on expected translation length, TODO: Implement dynamic token limit based on pricing plan
 			Temperature: 0.2, // Low temperature for deterministic results
 		})
 
@@ -170,4 +170,35 @@ func TranslatePhrase(c *gin.Context, db *gorm.DB) {
 		"phrase":       request.Phrase,
 		"translations": translations,
 	})
+}
+
+// GetTranslations retrieves the translation history for the authenticated user
+func GetTranslations(c *gin.Context, db *gorm.DB) {
+	// Retrieve the user ID from the context set by the middleware
+	userIdInterface, exists := c.Get("userId")
+
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	// Convert userId from float64 to uint
+	userId, ok := userIdInterface.(float64)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse user ID"})
+		return
+	}
+
+	userIdUint := uint(userId)
+
+	// Fetch translations from the database
+	var translations []models.Translation
+
+	if err := db.Where("user_id = ?", userIdUint).Find(&translations).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch translations"})
+		return
+	}
+
+	// Send the response as JSON
+	c.JSON(http.StatusOK, translations)
 }

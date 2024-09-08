@@ -12,8 +12,6 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 
-
-	
 	"github.com/joho/godotenv"
 	"gorm.io/gorm"
 )
@@ -77,9 +75,12 @@ func main() {
     translationGroup := r.Group("/api/translate")
 	translationGroup.Use(middlewares.AuthMiddleware())
     {
-        translationGroup.POST("/", func(c *gin.Context) {
+        translationGroup.POST("/new", func(c *gin.Context) {
             controllers.TranslatePhrase(c, Db)
         })
+		translationGroup.GET("/fetch", func(c *gin.Context) {
+			controllers.GetTranslations(c, Db)
+		})
     }
 
 	usersGroup := r.Group("/api/users")
