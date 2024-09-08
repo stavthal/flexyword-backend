@@ -202,19 +202,43 @@ func GetTranslations(c *gin.Context, db *gorm.DB) {
 	}
 
 	// Fetch translations from the database
-	var translations []models.TranslationResponse
-
-	if err := db.Model(&models.Translation{}).
-		Select("id, phrase, input_language, output_languages, translation_result, created_at").
-		Where("user_id = ?", userId).
-		Scan(&translations).Error; err != nil {
+	var translations []models.Translation
+	if err := db.Where("user_id = ?", userId).Find(&translations).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch translations"})
 		return
 	}
 
-	// Send the response as JSON
-	c.JSON(http.StatusOK, translations)
+	// Format the response and parse the JSON fields
+	var formattedTranslations []gin.H
+	for _, t := range translations {
+		var outputLanguages []string
+		var translationResult map[string]string
+
+		// Unmarshal the JSON fields
+		if err := json.Unmarshal([]byte(t.OutputLanguages), &outputLanguages); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse output languages"})
+			return
+		}
+		if err := json.Unmarshal([]byte(t.TranslationResult), &translationResult); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse translation result"})
+			return
+		}
+
+		// Append the formatted response
+		formattedTranslations = append(formattedTranslations, gin.H{
+			"id":                t.ID,
+			"phrase":            t.Phrase,
+			"input_language":    t.InputLanguage,
+			"output_languages":  outputLanguages,
+			"translation_result": translationResult,
+			"created_at":        t.CreatedAt,
+		})
+	}
+
+	// Send the formatted response as JSON
+	c.JSON(http.StatusOK, formattedTranslations)
 }
+
 
 // DeleteTranslation deletes a translation from the database
 func DeleteTranslation(c *gin.Context, db *gorm.DB) {
