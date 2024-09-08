@@ -1,0 +1,24 @@
+# env files
+.env
+.env.local
+
+# http folder
+http/
+http-tests
+
+# go-air files
+tmp
+.air.toml
+
+# vscode folder
+.vscode
+
+# vendor folder
+vendor
+
+# makefile
+Makefile
+
+# TODOS.md
+TODOS.md
+*.md

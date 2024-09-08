@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"time"
 
@@ -10,6 +11,9 @@ import (
 	"flexyword.io/backend/models"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+
+
+	
 	"github.com/joho/godotenv"
 	"gorm.io/gorm"
 )
@@ -21,7 +25,8 @@ func init() {
 	// Load the environmental variables
 	err := godotenv.Load(".env")
 	if err != nil {
-		log.Fatalf("Error loading .env file: %v", err)
+		fmt.Printf("Error loading .env file: %v\n", err)
+		fmt.Println("Proceeding without loading .env file")
 	}
 
 	// Initialize the database connection
