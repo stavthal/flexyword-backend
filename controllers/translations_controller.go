@@ -3,6 +3,7 @@ package controllers
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"os"
 	"strings"
@@ -212,4 +213,51 @@ func GetTranslations(c *gin.Context, db *gorm.DB) {
 
 	// Send the response as JSON
 	c.JSON(http.StatusOK, translations)
+}
+
+// DeleteTranslation deletes a translation from the database
+func DeleteTranslation(c *gin.Context, db *gorm.DB) {
+	// Retrieve the user ID from the context set by the middleware
+	userIdInterface, exists := c.Get("userId")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	// Convert userId from string to uuid.UUID
+	userIdStr, ok := userIdInterface.(string)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse user ID"})
+		return
+	}
+	userId, err := uuid.Parse(userIdStr)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
+	// Retrieve the translation ID from the URL parameter
+	translationIdStr := c.Params.ByName("translation_id")
+
+	fmt.Printf("translationIdStr: %s\n", translationIdStr)
+	translationId, err := uuid.Parse(translationIdStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid translation ID"})
+		return
+	}
+
+	// Fetch the translation from the database
+	var translation models.Translation
+	if err := db.First(&translation, "id = ? AND user_id = ?", translationId, userId).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Translation not found"})
+		return
+	}
+
+	// Delete the translation from the database
+	if err := db.Delete(&translation).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete translation"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Translation deleted"})
 }
