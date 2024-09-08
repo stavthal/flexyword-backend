@@ -15,8 +15,8 @@ type User struct {
 	PricingPlanID uint          `json:"pricing_plan_id"`                       // Foreign key for PricingPlan
 	UsedTokens    int           `json:"used_tokens" gorm:"default:0"`          // Tokens used in the current billing cycle
 	Translations  []Translation `json:"translations" gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE;"`  // User's translation history
-	LastReset     time.Time     `json:"last_reset"`    
+	LastReset     time.Time     `json:"last_reset"`							// Last time the token usage was reset
+	BillingAddress string       `json:"billing_address" gorm:"null"`		// User's billing address
 }
 
 
-	// TODO: Add billing address
