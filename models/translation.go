@@ -9,6 +9,7 @@ import (
 
 type Translation struct {
 	gorm.Model
+	ID 				  uuid.UUID `json:"id" gorm:"type:uuid;primary_key;default:uuid_generate_v4()"`
 	Phrase            string    `json:"phrase" gorm:"not null"`
 	InputLanguage     string    `json:"input_language" gorm:"not null"`
 	OutputLanguages   string    `json:"output_languages" gorm:"type:jsonb;not null"`  // JSON string
@@ -19,7 +20,7 @@ type Translation struct {
 
 // Custom response struct to exclude User and other unnecessary fields
 type TranslationResponse struct {
-	ID 			      uint   `json:"id"`
+	ID 			      string `json:"id"`
 	Phrase            string `json:"phrase"`
 	InputLanguage     string `json:"input_language"`
 	OutputLanguages   string `json:"output_languages"`
