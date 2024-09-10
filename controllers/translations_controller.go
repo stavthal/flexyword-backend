@@ -3,6 +3,7 @@ package controllers
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"os"
 	"strings"
@@ -63,7 +64,7 @@ func TranslatePhrase(c *gin.Context, db *gorm.DB) {
 		return
 	}
 
-	// Enforce pricing plan constraints (Freemium example)
+	// Enforce pricing plan constraints
 	plan := user.PricingPlan
 
 	// Maximum number of languages
@@ -101,7 +102,7 @@ func TranslatePhrase(c *gin.Context, db *gorm.DB) {
 
 	// Loop through each language and request translation from OpenAI
 	for _, lang := range request.Languages {
-		prompt := "Translate the following phrase from " + request.InputLanguage + " into " + lang + ": " + request.Phrase + ".Return only the returned phrase, no extra text."
+		prompt := "Translate the following phrase from " + request.InputLanguage + " into " + lang + ": " + request.Phrase + ". Return only the translated phrase."
 
 		resp, err := client.CreateChatCompletion(context.Background(), openai.ChatCompletionRequest{
 			Model: "gpt-4o-mini",
@@ -111,8 +112,8 @@ func TranslatePhrase(c *gin.Context, db *gorm.DB) {
 					Content: prompt,
 				},
 			},
-			MaxTokens:   4096, // Adjust max tokens based on expected translation length, TODO: Implement dynamic token limit based on pricing plan
-			Temperature: 0.2, // Low temperature for deterministic results
+			MaxTokens:   500,  // Adjust max tokens based on expected translation length
+			Temperature: 0.2,  // Low temperature for deterministic results
 		})
 
 		if err != nil {
@@ -160,9 +161,9 @@ func TranslatePhrase(c *gin.Context, db *gorm.DB) {
 	translation := models.Translation{
 		Phrase:            request.Phrase,
 		InputLanguage:     request.InputLanguage,
-		OutputLanguages:   string(outputLanguagesJSON), // Store the languages array as JSON string
-		TranslationResult: string(translationsJSON),    // Store the translations as JSON string
-		UserID:            user.ID,                  // Use the correctly converted userId
+		OutputLanguages:   string(outputLanguagesJSON),
+		TranslationResult: string(translationsJSON),
+		UserID:            user.ID,
 	}
 
 	if err := services.StoreTranslation(db, &translation); err != nil {
@@ -176,6 +177,7 @@ func TranslatePhrase(c *gin.Context, db *gorm.DB) {
 		"translations": translations,
 	})
 }
+
 
 // GetTranslations retrieves the translation history for the authenticated user
 func GetTranslations(c *gin.Context, db *gorm.DB) {
@@ -200,16 +202,87 @@ func GetTranslations(c *gin.Context, db *gorm.DB) {
 	}
 
 	// Fetch translations from the database
-	var translations []models.TranslationResponse
-
-	if err := db.Model(&models.Translation{}).
-		Select("id, phrase, input_language, output_languages, translation_result, created_at").
-		Where("user_id = ?", userId).
-		Scan(&translations).Error; err != nil {
+	var translations []models.Translation
+	if err := db.Where("user_id = ?", userId).Find(&translations).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch translations"})
 		return
 	}
 
-	// Send the response as JSON
-	c.JSON(http.StatusOK, translations)
+	// Format the response and parse the JSON fields
+	var formattedTranslations []gin.H
+	for _, t := range translations {
+		var outputLanguages []string
+		var translationResult map[string]string
+
+		// Unmarshal the JSON fields
+		if err := json.Unmarshal([]byte(t.OutputLanguages), &outputLanguages); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse output languages"})
+			return
+		}
+		if err := json.Unmarshal([]byte(t.TranslationResult), &translationResult); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse translation result"})
+			return
+		}
+
+		// Append the formatted response
+		formattedTranslations = append(formattedTranslations, gin.H{
+			"id":                t.ID,
+			"phrase":            t.Phrase,
+			"input_language":    t.InputLanguage,
+			"output_languages":  outputLanguages,
+			"translation_result": translationResult,
+			"created_at":        t.CreatedAt,
+		})
+	}
+
+	// Send the formatted response as JSON
+	c.JSON(http.StatusOK, formattedTranslations)
+}
+
+
+// DeleteTranslation deletes a translation from the database
+func DeleteTranslation(c *gin.Context, db *gorm.DB) {
+	// Retrieve the user ID from the context set by the middleware
+	userIdInterface, exists := c.Get("userId")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	// Convert userId from string to uuid.UUID
+	userIdStr, ok := userIdInterface.(string)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse user ID"})
+		return
+	}
+	userId, err := uuid.Parse(userIdStr)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
+	// Retrieve the translation ID from the URL parameter
+	translationIdStr := c.Params.ByName("translation_id")
+
+	fmt.Printf("translationIdStr: %s\n", translationIdStr)
+	translationId, err := uuid.Parse(translationIdStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid translation ID"})
+		return
+	}
+
+	// Fetch the translation from the database
+	var translation models.Translation
+	if err := db.First(&translation, "id = ? AND user_id = ?", translationId, userId).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Translation not found"})
+		return
+	}
+
+	// Delete the translation from the database
+	if err := db.Delete(&translation).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete translation"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Translation deleted"})
 }

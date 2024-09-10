@@ -66,6 +66,9 @@ func main() {
 		translationGroup.GET("/fetch", func(c *gin.Context) {
 			controllers.GetTranslations(c, Db)
 		})
+		translationGroup.DELETE("/delete/:translation_id", func(c *gin.Context) {
+			controllers.DeleteTranslation(c, Db)
+		})
     }
 
 	usersGroup := r.Group("/api/users")
