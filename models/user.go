@@ -13,6 +13,8 @@ type User struct {
 	Username      string        `json:"username" gorm:"unique;not null"`       // Unique username
 	Email         string        `json:"email" gorm:"unique;not null"`          // Unique email
 	Password 	  string 	    `json:"password" gorm:"not null"`
+	FirstName	  string		`json:"first_name" gorm:"not null"`
+	LastName	  string		`json:"last_name" gorm:"not null"`
 	PricingPlan   PricingPlan   `json:"pricing_plan" gorm:"foreignKey:PricingPlanID"` // Reference to the PricingPlan
 	PricingPlanID uint          `json:"pricing_plan_id"`                       // Foreign key for PricingPlan
 	UsedTokens    int           `json:"used_tokens" gorm:"default:0"`          // Tokens used in the current billing cycle

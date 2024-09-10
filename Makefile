@@ -37,13 +37,13 @@ docker-image-prune-sudo:
 
 # Goose Related
 migrate-up:
-	@source .env && goose -dir ./db/migrations postgres $$DATABASE_URL up
+	@source .env && goose -dir ./db/migrations postgres $$SUPABASE_DB_URL up
 
 migrate-down:
-	@source .env && goose -dir ./db/migrations postgres $$DATABASE_URL down
+	@source .env && goose -dir ./db/migrations postgres $$SUPABASE_DB_URL down
 
 migrate-status:
-	@source .env && goose -dir ./db/migrations postgres $$DATABASE_URL status
+	@source .env && goose -dir ./db/migrations postgres $$SUPABASE_DB_URL status
 
 migrate-create:
 	@source .env && goose -dir ./db/migrations create $(name) sql
