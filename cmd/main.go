@@ -79,6 +79,9 @@ func main() {
 		usersGroup.POST("/login", func(c *gin.Context) {
 			controllers.LoginUser(c, Db)
 		})
+		usersGroup.GET("/profile", func(c *gin.Context) {
+			controllers.GetUserProfile(c, Db)
+		})
 	}
 
 	

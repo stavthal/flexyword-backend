@@ -8,6 +8,7 @@ import (
 	"flexyword.io/backend/services"
 	"flexyword.io/backend/utils"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -104,5 +105,45 @@ func LoginUser(c *gin.Context, db *gorm.DB) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"token": token,
+	})
+}
+
+func GetUserProfile(c *gin.Context, db *gorm.DB) {
+	// Retrieve the user ID from the context set by the middleware
+	userIdInterface, exists := c.Get("userId")
+
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": "Unauthorized",
+		})
+		return
+	}
+
+	// Convert userId from string to uuid.UUID
+	userIdStr, ok := userIdInterface.(string)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to parse user ID",
+		})
+		return
+	}
+
+	// Parse the user ID
+	userId, err := uuid.Parse(userIdStr)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Invalid user ID",
+		})
+		return
+	}
+
+	// Fetch the user from the database
+	var user models.User
+
+	db.Where("id = ?", userId).First(&user)
+
+	c.JSON(http.StatusOK, gin.H{
+		"user": user,
 	})
 }
