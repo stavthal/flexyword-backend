@@ -18,6 +18,18 @@ type PricingPlan struct {
 	PricePerMonth     float64 `json:"price_per_month"`                      // Monthly price for the plan
 }
 
+type PricingPlanResponse struct {
+	ID                uint    `json:"id"`
+	Name              string  `json:"name"`
+	TranslationLimit  int     `json:"translation_limit"`
+	LanguagesLimit    int     `json:"languages_limit"`
+	PhraseLengthLimit int     `json:"phrase_length_limit"`
+	TokenLimit        int     `json:"token_limit"`
+	AdvancedFeatures  bool    `json:"advanced_features"`
+	PrioritySupport   bool    `json:"priority_support"`
+	PricePerMonth     float64 `json:"price_per_month"`
+}
+
 // SeedPricingPlans seeds the database with default pricing plans or updates existing ones
 func (p *PricingPlan) SeedPricingPlans(db *gorm.DB) error {
 	// Ensure the PricingPlan table exists

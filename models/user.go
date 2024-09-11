@@ -23,4 +23,15 @@ type User struct {
 	BillingAddress string       `json:"billing_address" gorm:"null"`		// User's billing address
 }
 
+type UserResponse struct {
+	ID            uuid.UUID     `json:"id"`
+	Username      string        `json:"username"`
+	Email         string        `json:"email"`
+	FirstName	  string		`json:"first_name"`
+	LastName	  string		`json:"last_name"`
+	PricingPlan   PricingPlan   `json:"pricing_plan"`
+	UsedTokens    int           `json:"used_tokens"`
+	Translations  []TranslationResponse `json:"translations"`
+	BillingAddress string       `json:"billing_address"`
+}
 

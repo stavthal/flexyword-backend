@@ -130,7 +130,6 @@ func GetUserProfile(c *gin.Context, db *gorm.DB) {
 
 	// Parse the user ID
 	userId, err := uuid.Parse(userIdStr)
-
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Invalid user ID",
@@ -140,10 +139,41 @@ func GetUserProfile(c *gin.Context, db *gorm.DB) {
 
 	// Fetch the user from the database
 	var user models.User
+	result := db.Preload("Translations").Preload("PricingPlan").Where("id = ?", userId).First(&user)
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "User not found",
+		})
+		return
+	}
 
-	db.Where("id = ?", userId).First(&user)
+		// Map the translations to TranslationResponse format
+	var translationsResponse []models.TranslationResponse
+	for _, translation := range user.Translations {
+		translationsResponse = append(translationsResponse, models.TranslationResponse{
+			ID:               translation.ID.String(),
+			Phrase:           translation.Phrase,
+			InputLanguage:    translation.InputLanguage,
+			OutputLanguages:  translation.OutputLanguages,
+			TranslationResult: translation.TranslationResult,
+			CreatedAt:        translation.CreatedAt, // Optional, remove if not needed
+		})
+	}
+
+	// Map the fields from the User model to the UserResponse model
+	userResponse := models.UserResponse{
+		ID:            user.ID,
+		Username:      user.Username,
+		Email:         user.Email,
+		FirstName:     user.FirstName,
+		LastName:      user.LastName,
+		PricingPlan:   user.PricingPlan,
+		UsedTokens:    user.UsedTokens,
+		Translations:  translationsResponse,
+		BillingAddress: user.BillingAddress,
+	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"user": user,
+		"user": userResponse,
 	})
 }

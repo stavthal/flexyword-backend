@@ -35,6 +35,8 @@ docker-image-prune:
 docker-image-prune-sudo:
 	docker image prune -a
 
+docker-full-clean: docker-stop docker-rm docker-build docker-run
+
 # Goose Related
 migrate-up:
 	@source .env && goose -dir ./db/migrations postgres $$SUPABASE_DB_URL up
