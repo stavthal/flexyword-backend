@@ -80,6 +80,7 @@ func TranslatePhrase(c *gin.Context, db *gorm.DB) {
 	}
 
 	// Check if the user has exceeded the monthly translation limit
+	// TODO: This should be using the model field for counting translations and also setup a cron job to run every month and reset translations
 	currentMonth := time.Now().Format("2006-01")
 	var translationsCount int64
 	if err := db.Model(&models.Translation{}).
