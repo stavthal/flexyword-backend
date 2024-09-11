@@ -11,6 +11,7 @@ import (
 
 	"flexyword.io/backend/models"
 	"flexyword.io/backend/services"
+	"flexyword.io/backend/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/sashabaranov/go-openai"
@@ -239,6 +240,40 @@ func GetTranslations(c *gin.Context, db *gorm.DB) {
 	// Send the formatted response as JSON
 	c.JSON(http.StatusOK, formattedTranslations)
 }
+
+func GetTranslationByID(c *gin.Context, db *gorm.DB) {
+	// Get userId from context
+	userId, err := utils.GetUserIDFromContext(c)
+	if err != nil {
+		return // Error is already handled in the utility function
+	}
+
+	// Retrieve the translation ID from the URL parameter
+	translationIdStr := c.Param("translation_id")
+	translationId, err := uuid.Parse(translationIdStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid translation ID"})
+		return
+	}
+
+	// Fetch the translation from the database
+	var translation models.Translation
+	if err := db.Where("id = ? AND user_id = ?", translationId, userId).First(&translation).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Translation not found"})
+		return
+	}
+
+	// Format the response as needed
+	c.JSON(http.StatusOK, gin.H{
+		"id":                translation.ID,
+		"phrase":            translation.Phrase,
+		"input_language":    translation.InputLanguage,
+		"output_languages":  translation.OutputLanguages,
+		"translation_result": translation.TranslationResult,
+		"created_at":        translation.CreatedAt,
+	})
+}
+
 
 
 // DeleteTranslation deletes a translation from the database

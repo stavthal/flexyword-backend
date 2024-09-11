@@ -66,6 +66,9 @@ func main() {
 		translationGroup.GET("/fetch", func(c *gin.Context) {
 			controllers.GetTranslations(c, Db)
 		})
+		translationGroup.GET("/fetch/:translation_id", func(c *gin.Context) {
+			controllers.GetTranslationByID(c, Db)
+		})
 		translationGroup.DELETE("/delete/:translation_id", func(c *gin.Context) {
 			controllers.DeleteTranslation(c, Db)
 		})
