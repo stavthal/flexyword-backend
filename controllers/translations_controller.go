@@ -34,28 +34,17 @@ type TranslateRequest struct {
 // TranslatePhrase handles the translation of a phrase into multiple languages
 func TranslatePhrase(c *gin.Context, db *gorm.DB) {
 	var request TranslateRequest
+
 	if err := c.ShouldBindJSON(&request); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	// Retrieve the user ID from the context set by the middleware
-	userIdInterface, exists := c.Get("userId")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-		return
-	}
+	// Retrieve the user ID from the context set by the middleware using the util function
+	userId, err := utils.GetUserIDFromContext(c)
 
-	// Convert userId from string to uuid.UUID
-	userIdStr, ok := userIdInterface.(string)
-	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse user ID"})
-		return
-	}
-	userId, err := uuid.Parse(userIdStr)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID"})
-		return
+		return // Error is already handled in the utility function
 	}
 
 	// Fetch user from the database
@@ -183,24 +172,11 @@ func TranslatePhrase(c *gin.Context, db *gorm.DB) {
 
 // GetTranslations retrieves the translation history for the authenticated user
 func GetTranslations(c *gin.Context, db *gorm.DB) {
-	// Retrieve the user ID from the context set by the middleware
-	userIdInterface, exists := c.Get("userId")
+	// Retrieve the user ID from the context set by the middleware using the util function
+	userId, err := utils.GetUserIDFromContext(c)
 
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-		return
-	}
-
-	// Convert userId from string to uuid.UUID
-	userIdStr, ok := userIdInterface.(string)
-	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse user ID"})
-		return
-	}
-	userId, err := uuid.Parse(userIdStr)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID"})
-		return
+		return // Error is already handled in the utility function
 	}
 
 	// Fetch translations from the database

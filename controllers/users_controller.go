@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"fmt"
 	"net/http"
 
 	"flexyword.io/backend/models"
@@ -17,7 +16,6 @@ func RegisterUser(c *gin.Context, db *gorm.DB) {
 	// Bind the JSON body to the user model
 	err := c.BindJSON(&user)
 
-	fmt.Println(user)	
 
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
