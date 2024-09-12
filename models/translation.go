@@ -18,12 +18,13 @@ type Translation struct {
 	User              User      `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE;"`
 }
 
+
 // Custom response struct to exclude User and other unnecessary fields
 type TranslationResponse struct {
-	ID 			      string `json:"id"`
-	Phrase            string `json:"phrase"`
-	InputLanguage     string `json:"input_language"`
-	OutputLanguages   string `json:"output_languages"`
-	TranslationResult string `json:"translation_result"`
-	CreatedAt         time.Time `json:"created_at"`
+	ID               string            `json:"id"`
+	Phrase           string            `json:"phrase"`
+	InputLanguage    string            `json:"input_language"`
+	OutputLanguages  []string          `json:"output_languages"`  // Change from string to []string
+	TranslationResult map[string]string `json:"translation_result"` // Change from string to map[string]string
+	CreatedAt        time.Time         `json:"created_at"`
 }

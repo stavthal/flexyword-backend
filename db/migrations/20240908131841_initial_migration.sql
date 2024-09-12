@@ -2,7 +2,7 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- Create PricingPlan table
-CREATE TABLE pricing_plans (
+CREATE TABLE IF NOT EXISTS pricing_plans (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) UNIQUE NOT NULL,
     translation_limit INT,
@@ -12,12 +12,12 @@ CREATE TABLE pricing_plans (
     advanced_features BOOLEAN,
     priority_support BOOLEAN,
     price_per_month DECIMAL(10, 2) NOT NULL,
-    created_at TIMESTAMP,
-    updated_at TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Create User table
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     username VARCHAR(255) UNIQUE NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
@@ -26,21 +26,21 @@ CREATE TABLE users (
     used_tokens INT DEFAULT 0,
     last_reset TIMESTAMP,
     billing_address VARCHAR(255),
-    created_at TIMESTAMP,
-    updated_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (pricing_plan_id) REFERENCES pricing_plans(id)
 );
 
 -- Create Translation table
-CREATE TABLE translations (
+CREATE TABLE IF NOT EXISTS translations (
     id SERIAL PRIMARY KEY,
     phrase TEXT NOT NULL,
     input_language TEXT NOT NULL,
     output_languages JSONB NOT NULL,
     translation_result JSONB NOT NULL,
     user_id UUID NOT NULL,
-    created_at TIMESTAMP,
-    updated_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 

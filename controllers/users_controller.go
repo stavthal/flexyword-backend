@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"encoding/json"
 	"net/http"
 
 	"flexyword.io/backend/models"
@@ -107,7 +108,6 @@ func LoginUser(c *gin.Context, db *gorm.DB) {
 
 func GetUserProfile(c *gin.Context, db *gorm.DB) {
 	// Retrieve the user ID from the context set by the middleware
-	// Use the utility function to get user ID
 	userId, err := utils.GetUserIDFromContext(c)
 	if err != nil {
 		return // Error is already handled in the utility function
@@ -123,16 +123,33 @@ func GetUserProfile(c *gin.Context, db *gorm.DB) {
 		return
 	}
 
-		// Map the translations to TranslationResponse format
+	// Map the translations to TranslationResponse format
 	var translationsResponse []models.TranslationResponse
 	for _, translation := range user.Translations {
+		var outputLanguages []string
+		var translationResult map[string]string
+
+		// Unmarshal the JSON fields
+		if err := json.Unmarshal([]byte(translation.OutputLanguages), &outputLanguages); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "Failed to unmarshal output languages",
+			})
+			return
+		}
+		if err := json.Unmarshal([]byte(translation.TranslationResult), &translationResult); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "Failed to unmarshal translation result",
+			})
+			return
+		}
+
 		translationsResponse = append(translationsResponse, models.TranslationResponse{
 			ID:               translation.ID.String(),
 			Phrase:           translation.Phrase,
 			InputLanguage:    translation.InputLanguage,
-			OutputLanguages:  translation.OutputLanguages,
-			TranslationResult: translation.TranslationResult,
-			CreatedAt:        translation.CreatedAt, // Optional, remove if not needed
+			OutputLanguages:  outputLanguages, // Unmarshalled value
+			TranslationResult: translationResult, // Unmarshalled value
+			CreatedAt:        translation.CreatedAt, // Optional
 		})
 	}
 

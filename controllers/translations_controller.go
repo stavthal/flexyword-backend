@@ -217,6 +217,7 @@ func GetTranslations(c *gin.Context, db *gorm.DB) {
 	c.JSON(http.StatusOK, formattedTranslations)
 }
 
+// GetTranslationByID retrieves a single translation by its ID
 func GetTranslationByID(c *gin.Context, db *gorm.DB) {
 	// Get userId from context
 	userId, err := utils.GetUserIDFromContext(c)
@@ -239,17 +240,32 @@ func GetTranslationByID(c *gin.Context, db *gorm.DB) {
 		return
 	}
 
+	// Unmarshal the JSON fields
+	var outputLanguages []string
+	var translationResult map[string]string
+
+	// Unmarshal the output_languages JSONB field
+	if err := json.Unmarshal([]byte(translation.OutputLanguages), &outputLanguages); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse output languages"})
+		return
+	}
+
+	// Unmarshal the translation_result JSONB field
+	if err := json.Unmarshal([]byte(translation.TranslationResult), &translationResult); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse translation result"})
+		return
+	}
+
 	// Format the response as needed
 	c.JSON(http.StatusOK, gin.H{
 		"id":                translation.ID,
 		"phrase":            translation.Phrase,
 		"input_language":    translation.InputLanguage,
-		"output_languages":  translation.OutputLanguages,
-		"translation_result": translation.TranslationResult,
+		"output_languages":  outputLanguages, // Return the unmarshalled output languages
+		"translation_result": translationResult, // Return the unmarshalled translation result
 		"created_at":        translation.CreatedAt,
 	})
 }
-
 
 
 // DeleteTranslation deletes a translation from the database
