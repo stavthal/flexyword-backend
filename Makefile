@@ -49,3 +49,8 @@ migrate-status:
 
 migrate-create:
 	@source .env && goose -dir ./db/migrations create $(name) sql
+
+migrate-to:
+	@source .env && goose -dir ./db/migrations postgres $$SUPABASE_DB_URL up-to $(version)
+migrate-down-to:
+	@source .env && goose -dir ./db/migrations postgres $$SUPABASE_DB_URL down-to $(version)
